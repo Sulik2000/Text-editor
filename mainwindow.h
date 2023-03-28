@@ -24,6 +24,8 @@ public:
 protected:
 
 private slots:
+    void renameFile(QString name);
+
     void createFile(QString name);
 
     void createFolder(QString name);
@@ -45,7 +47,7 @@ private slots:
     void on_treeView_customContextMenuRequested(const QPoint &pos);
 
 private:
-    QString pathNewFile;
+    QFileInfo _newFile;
     QMap<QString, int> openedFiles;
     Ui::MainWindow *ui;
     QFileSystemModel *fileModel;

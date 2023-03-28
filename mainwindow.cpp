@@ -18,22 +18,41 @@ MainWindow::~MainWindow()
     delete fileModel;
 }
 
+void MainWindow::renameFile(QString name)
+{
+    if(_newFile.isFile()){
+        QString path = _newFile.absoluteFilePath();
+        if(!QFile::rename(_newFile.absoluteFilePath(), _newFile.absoluteDir().path() + "/" + name))
+            QMessageBox::critical(this, "Error", "File name already exists");
+    }
+    else{
+        QDir dir {_newFile.absoluteDir()};
+
+        QString oldName = _newFile.absoluteFilePath();
+        QString newName = dir.absolutePath() + '/' + name;
+        dir.rename(oldName, newName);
+    }
+}
+
 void MainWindow::createFile(QString name)
 {
-    qDebug() << pathNewFile + '/' + name;
-    QFile file(pathNewFile + '/' + name);
+    if(_newFile.isFile())
+        return;
+    qDebug() << _newFile.absoluteFilePath() + '/' + name;
+
+    QFile file(_newFile.absoluteFilePath() + '/' + name);
     if(!file.open(QFile::OpenModeFlag::NewOnly))
         QMessageBox::critical(this, "Error", "File already exists");
-
-
+    file.close();
 }
 
 void MainWindow::createFolder(QString name)
 {
-    QDir dir(pathNewFile);
+    if(_newFile.isFile())
+        return;
+    QDir dir(_newFile.absoluteFilePath());
     if(!dir.mkdir(name))
         qDebug() << "Error cannot create folder";
-
 }
 
 void MainWindow::on_actionOpen_Folder_triggered()
@@ -155,6 +174,7 @@ void MainWindow::on_treeView_customContextMenuRequested(const QPoint &pos)
     contextMenu->addAction("New file");
     contextMenu->addAction("New folder");
     contextMenu->addAction("Delete");
+    contextMenu->addAction("Rename");
     QPoint globalPos = ui->treeView->mapToGlobal(pos);
     QAction* action = contextMenu->exec(globalPos);
     if(action){
@@ -164,17 +184,17 @@ void MainWindow::on_treeView_customContextMenuRequested(const QPoint &pos)
                 return;
 
             QFileInfo info = fileModel->fileInfo(index);
-            if(info.isFile())
-                return;
-            if(info.fileName() == "..")
-                pathNewFile = fileModel->rootPath();
-            else
-                pathNewFile = info.absoluteFilePath();
+            _newFile = info;
 
-            qDebug() << pathNewFile;
+            if(info.fileName() == ".."){
+                info.setFile(fileModel->rootPath());
+                _newFile = info;
+            }
+
+            qDebug() << info.absoluteFilePath();
 
             CreateFile *menu = new CreateFile(this);
-            connect(menu, SIGNAL(createFile(QString)), this, SLOT(createFile(QString)));
+            connect(menu, &CreateFile::createFile, this, &MainWindow::createFile);
             menu->show();
         }
 
@@ -188,16 +208,17 @@ void MainWindow::on_treeView_customContextMenuRequested(const QPoint &pos)
             if(info.isFile())
                 return;
             if(info.fileName() == "..")
-                pathNewFile = fileModel->rootPath();
+                _newFile.setFile(fileModel->rootPath());
             else
-                pathNewFile = info.absoluteFilePath();
+                _newFile = info;
 
             CreateFile *createFile = new CreateFile(this, "Create folder");
-            connect(createFile, SIGNAL(createFile(QString)), this, SLOT(createFolder(QString)));
+            connect(createFile, &CreateFile::createFile, this, &MainWindow::createFolder);
             createFile->show();
         }
 
         else if(action->text() == "Delete"){
+
             QModelIndex index = ui->treeView->currentIndex();
             if(!index.isValid())
                 return;
@@ -217,6 +238,16 @@ void MainWindow::on_treeView_customContextMenuRequested(const QPoint &pos)
                 }
             }
 
+        }
+
+        else if(action->text() == "Rename"){
+            QFileInfo info = fileModel->fileInfo(ui->treeView->currentIndex());
+
+            _newFile = info;
+
+            CreateFile *createFile = new CreateFile(this, "Name your folder");
+            connect(createFile, &CreateFile::createFile, this, &MainWindow::renameFile);
+            createFile->show();
         }
     }
 }
