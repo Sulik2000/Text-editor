@@ -299,16 +299,23 @@ void MainWindow::parseSettings(QString path)
 
 void MainWindow::initializeSettings(QString path)
 {
-    QFile file(path);
-    if(!file.open(QFile::WriteOnly)){
-        qDebug() << "Error: cannot create file of settings";
-        return;
+
+    if(!QFile::exists("C:/MinGW/bin/g++.exe")){
+        QMessageBox::critical(this, "Compiler error", "We didn't find your compiler. Can you set your compiler in the settings?");
+        SettingsWindow *window = new SettingsWindow(_settings);
+        connect(window, SIGNAL(acceptedSettings(QVariantMap)), this, SLOT(setSettings(QVariantMap)));
+        window->show();
     }
 
-    file.write("{\n\t\"path\":\"C:/MinGW/bin/\"\n}");
-    file.close();
-    _settingsDoc = QJsonDocument::fromJson(QString("{\n\t\"path\":\"C:/MinGW\"\n}").toUtf8(), _settingsError);
-    if(_settingsDoc.isNull())
-        qDebug() << "Error: cannot parse information from file of settings";
+    else{
+        QFile file(path);
+        file.open(QFile::ReadWrite);
+        file.write("{\n\t\"path\":\"C:/MinGW/bin/\"\n}");
+        file.close();
+        _settingsDoc = QJsonDocument::fromJson(QString("{\n\t\"path\":\"C:/MinGW\"\n}").toUtf8(), _settingsError);
+        if(_settingsDoc.isNull())
+            qDebug() << "Error: cannot parse information from file of settings";
+    }
+
 }
 
