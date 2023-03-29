@@ -2,12 +2,16 @@
 #define MAINWINDOW_H
 
 #include "createfile.h"
+#include "settingswindow.h"
 #include <QMainWindow>
 #include <QFileSystemModel>
 #include <QFileDialog>
 #include <qmap.h>
 #include <QPlainTextEdit>
 #include <QMessageBox>
+#include <QJsonDocument>
+#include <QJsonParseError>
+#include <QJsonObject>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -24,6 +28,8 @@ public:
 protected:
 
 private slots:
+    void setSettings(QVariantMap settings);
+
     void renameFile(QString name);
 
     void createFile(QString name);
@@ -46,11 +52,18 @@ private slots:
 
     void on_treeView_customContextMenuRequested(const QPoint &pos);
 
+    void on_actionSettings_triggered();
+
 private:
+    void parseSettings(QString path);
+    void initializeSettings(QString path);
+    QJsonDocument _settingsDoc;
+    QJsonParseError *_settingsError;
     QFileInfo _newFile;
     QMap<QString, int> openedFiles;
     Ui::MainWindow *ui;
     QFileSystemModel *fileModel;
     QMenu *contextMenu;
+    QVariantMap _settings;
 };
 #endif // MAINWINDOW_H

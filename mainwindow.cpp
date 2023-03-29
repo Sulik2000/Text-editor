@@ -10,12 +10,35 @@ MainWindow::MainWindow(QWidget *parent)
     fileModel->setFilter(QDir::Filter::AllEntries | QDir::Filter::NoDot);
 
     ui->treeView->setContextMenuPolicy(Qt::CustomContextMenu);
+
+    // Parsing settings from json file
+    _settingsError = new QJsonParseError();
+    QString pathOfSettings = qApp->applicationDirPath() + '/' + "settings.json";
+    if(!QFile::exists(pathOfSettings))
+        initializeSettings(pathOfSettings);
+    else
+        parseSettings(pathOfSettings);
+
+    _settings = _settingsDoc.object().toVariantMap();
 }
 
 MainWindow::~MainWindow()
 {
     delete ui;
     delete fileModel;
+    delete _settingsError;
+}
+
+void MainWindow::setSettings(QVariantMap settings)
+{
+    _settings = settings;
+    QString pathOfSettings = qApp->applicationDirPath() + '/' + "settings.json";
+    QFile file(pathOfSettings);
+    file.open(QFile::WriteOnly);
+    qDebug() << settings["path"];
+    _settingsDoc.setObject(QJsonObject::fromVariantMap(_settings));
+    file.write(_settingsDoc.toJson(QJsonDocument::Compact));
+    file.close();
 }
 
 void MainWindow::renameFile(QString name)
@@ -250,5 +273,42 @@ void MainWindow::on_treeView_customContextMenuRequested(const QPoint &pos)
             createFile->show();
         }
     }
+}
+
+
+void MainWindow::on_actionSettings_triggered()
+{
+    SettingsWindow *window = new SettingsWindow(_settings, this);
+    connect(window, &SettingsWindow::acceptedSettings, this, &MainWindow::setSettings);
+    window->show();
+}
+
+// Parsing settings from json files
+void MainWindow::parseSettings(QString path)
+{
+    QFile file(path);
+    file.open(QFile::ReadOnly);
+    _settingsDoc = QJsonDocument::fromJson(file.readAll(), _settingsError);
+    if(_settingsDoc.isNull()){
+        qDebug() << "Error: cannot parse settings from Json file";
+        QMessageBox::critical(this, "Error", "Wrong syntax of json file which contains settings of application. Application automatically creates new file with default settings");
+        file.remove();
+        initializeSettings(path);
+    }
+}
+
+void MainWindow::initializeSettings(QString path)
+{
+    QFile file(path);
+    if(!file.open(QFile::WriteOnly)){
+        qDebug() << "Error: cannot create file of settings";
+        return;
+    }
+
+    file.write("{\n\t\"path\":\"C:/MinGW/bin/\"\n}");
+    file.close();
+    _settingsDoc = QJsonDocument::fromJson(QString("{\n\t\"path\":\"C:/MinGW\"\n}").toUtf8(), _settingsError);
+    if(_settingsDoc.isNull())
+        qDebug() << "Error: cannot parse information from file of settings";
 }
 

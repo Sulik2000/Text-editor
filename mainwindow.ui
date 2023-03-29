@@ -63,6 +63,7 @@
     </property>
     <addaction name="actionRun"/>
     <addaction name="actionBuild"/>
+    <addaction name="actionSettings"/>
    </widget>
    <addaction name="menuFile"/>
    <addaction name="menuCode"/>
@@ -121,6 +122,11 @@
   <action name="actionBuild">
    <property name="text">
     <string>Build</string>
+   </property>
+  </action>
+  <action name="actionSettings">
+   <property name="text">
+    <string>Settings</string>
    </property>
   </action>
  </widget>
