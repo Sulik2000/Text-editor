@@ -275,7 +275,6 @@ void MainWindow::on_treeView_customContextMenuRequested(const QPoint &pos)
     }
 }
 
-
 void MainWindow::on_actionSettings_triggered()
 {
     SettingsWindow *window = new SettingsWindow(_settings, this);
@@ -295,6 +294,8 @@ void MainWindow::parseSettings(QString path)
         file.remove();
         initializeSettings(path);
     }
+    if(!QFile::exists(_settingsDoc.object().value("path").toString()))
+        initializeSettings(_settingsDoc.object().value("path").toString());
 }
 
 void MainWindow::initializeSettings(QString path)
@@ -317,5 +318,42 @@ void MainWindow::initializeSettings(QString path)
             qDebug() << "Error: cannot parse information from file of settings";
     }
 
+}
+
+// Compile pro
+void MainWindow::on_actionRun_triggered()
+{
+    QString path = buildProgram();
+    runProgram(path);
+}
+
+void MainWindow::runProgram(QString path)
+{
+    system(path.toStdString().c_str());
+}
+
+QString MainWindow::buildProgram()
+{
+    QProcess process;
+    QStringList CppFiles;
+    QDir dir {fileModel->rootDirectory()};
+    dir.setNameFilters(QStringList() << "*.cpp");
+    CppFiles = dir.entryList();
+    QStringList commandArgs;
+    commandArgs << "-o" << dir.absolutePath() + "/main.exe";
+    for(int i = 0; i < CppFiles.count(); i++)
+        commandArgs << dir.absolutePath() + '/' + CppFiles[i];
+    process.setProgram(_settings.value("path").toString());
+    process.setArguments(commandArgs);
+    process.setWorkingDirectory("C:/");
+    process.start();
+    process.waitForFinished();
+    return QString(dir.absolutePath() + "/main.exe");
+}
+
+
+void MainWindow::on_actionBuild_triggered()
+{
+    buildProgram();
 }
 

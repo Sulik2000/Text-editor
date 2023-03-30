@@ -12,6 +12,7 @@
 #include <QJsonDocument>
 #include <QJsonParseError>
 #include <QJsonObject>
+#include <QProcess>
 
 QT_BEGIN_NAMESPACE
 namespace Ui { class MainWindow; }
@@ -54,7 +55,13 @@ private slots:
 
     void on_actionSettings_triggered();
 
+    void on_actionRun_triggered();
+
+    void on_actionBuild_triggered();
+
 private:
+    void runProgram(QString path);
+    QString buildProgram();
     void parseSettings(QString path);
     void initializeSettings(QString path);
     QJsonDocument _settingsDoc;
